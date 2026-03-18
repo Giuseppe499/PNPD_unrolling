@@ -4,21 +4,23 @@ import time
 from dataclasses import dataclass
 from typing import Callable
 
+
 @dataclass
 class TrainingConfig:
     model: torch.nn.Module
     training_set: torch.utils.data.Dataset
     validation_set: torch.utils.data.Dataset
     batch_size: int
-    unrolling_steps: int = 18 # number of unrolling steps (default 1 for no unrolling)
+    unrolling_steps: int = 18  # number of unrolling steps (default 1 for no unrolling)
     loss_fn: Callable = torch.nn.MSELoss()
     optimizer: Callable = lambda param: torch.optim.Adam(param, lr=0.001)
-    epochs: int = None # number of epochs (None for infinite)
-    max_time: float = None # maximum time in seconds (None for infinite)
-    save_path: str = None # path to save the model
-    info_path: str = None # path to save the training info
-    num_threads: int = 8 # number of threads (0 for all available)
+    epochs: int = None  # number of epochs (None for infinite)
+    max_time: float = None  # maximum time in seconds (None for infinite)
+    save_path: str = None  # path to save the model
+    info_path: str = None  # path to save the training info
+    num_threads: int = 8  # number of threads (0 for all available)
     device: str = "cpu"
+
 
 @dataclass
 class TrainingResult:
@@ -29,6 +31,7 @@ class TrainingResult:
     torch_config: str
     torch_num_threads: int
     torch_seed: int
+
 
 def training(config: TrainingConfig):
     device = config.device
@@ -46,10 +49,16 @@ def training(config: TrainingConfig):
     # Create the data loaders
     num_workers = 0
     train_loader = DataLoader(
-        config.training_set, batch_size=config.batch_size, shuffle=True, num_workers=num_workers
+        config.training_set,
+        batch_size=config.batch_size,
+        shuffle=True,
+        num_workers=num_workers,
     )
     validation_loader = DataLoader(
-        config.validation_set, batch_size=len(config.validation_set), shuffle=False, num_workers=num_workers
+        config.validation_set,
+        batch_size=len(config.validation_set),
+        shuffle=False,
+        num_workers=num_workers,
     )
 
     # Set up the model, loss function, and optimizer
@@ -64,20 +73,22 @@ def training(config: TrainingConfig):
     execution_time = []
     loss_history = []
     val_loss_history = []
-    elapsed_time = .0
+    elapsed_time = 0.0
 
     # Train the model
     epoch = -1
 
     if config.epochs is not None:
-        epoch_condition = lambda epoch: epoch < config.epochs
+        epoch_condition = lambda epoch: epoch < config.epochs  # noqa: E731
     else:
-        epoch_condition = lambda epoch: True
+        epoch_condition = lambda epoch: True  # noqa: E731
     if config.max_time is not None:
-        time_condition = lambda elapsed_time: elapsed_time < config.max_time
+        time_condition = lambda elapsed_time: elapsed_time < config.max_time  # noqa: E731
     else:
-        time_condition = lambda elapsed_time: True
-    should_continue = lambda epoch, elapsed_time: epoch_condition(epoch) and time_condition(elapsed_time)
+        time_condition = lambda elapsed_time: True  # noqa: E731
+    should_continue = lambda epoch, elapsed_time: (  # noqa: E731
+        epoch_condition(epoch) and time_condition(elapsed_time)
+    )
 
     while should_continue(epoch, elapsed_time):
         epoch += 1
@@ -96,16 +107,16 @@ def training(config: TrainingConfig):
             u = observed.clone()
             v = torch.zeros((2, *observed.shape), device=device)
 
-            loss = torch.tensor(.0, device=device)
-            coeff_sum = .0
+            loss = torch.tensor(0.0, device=device)
+            coeff_sum = 0.0
 
             # Make predictions for this batch
             for i in range(config.unrolling_steps):
                 u, v = model(observed, u, v)
                 # coeff = 1.
-                coeff = 1. / (config.unrolling_steps - i)
+                coeff = 1.0 / (config.unrolling_steps - i)
                 coeff_sum += coeff
-                loss += loss_fn(u, ground_truth)*coeff
+                loss += loss_fn(u, ground_truth) * coeff
             loss = loss / coeff_sum
 
             loss.backward()
@@ -162,15 +173,16 @@ def training(config: TrainingConfig):
         print(info)
 
     results = TrainingResult(
-            execution_time=execution_time,
-            loss_history=loss_history,
-            val_loss_history=val_loss_history,
-            device=str(device),
-            torch_config=torch.__config__.show(),
-            torch_num_threads=torch.get_num_threads(),
-            torch_seed=torch.random.initial_seed()
-        )
+        execution_time=execution_time,
+        loss_history=loss_history,
+        val_loss_history=val_loss_history,
+        device=str(device),
+        torch_config=torch.__config__.show(),
+        torch_num_threads=torch.get_num_threads(),
+        torch_seed=torch.random.initial_seed(),
+    )
     return results
+
 
 if __name__ == "__main__":
     from datasets.SynteticDataset import SynteticDataset
@@ -180,14 +192,22 @@ if __name__ == "__main__":
     from datasets.BSDS500 import BSDS500
     from torchvision import transforms
     from torch.fft import rfft2
-    from math_extras import blur_image, gaussian_psf, grad2D, div2D, grad_least_squares_blur, P_inv, prox_h_star_TV
+    from math_extras import (
+        blur_image,
+        gaussian_psf,
+        grad2D,
+        div2D,
+        grad_least_squares_blur,
+        P_inv,
+        prox_h_star_TV,
+    )
     from solvers import PNPD_functions, PNPD_parameters
     from pytorch_msssim import SSIM
 
     torch.manual_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    size=(256, 256)
+    size = (256, 256)
 
     psf_rfft2 = rfft2(gaussian_psf(sigma=2, size=size)).to(device)
     psf_rfft2_conj = psf_rfft2.conj().to(device)
@@ -196,7 +216,8 @@ if __name__ == "__main__":
     def blur_operator(image):
         return blur_image(image, psf_rfft2)
 
-    noise_percent= 0.01  # 1% noise
+    noise_percent = 0.01  # 1% noise
+
     def noise_operator(image):
         noise = torch.randn_like(image)
         noise /= noise.norm()
@@ -207,26 +228,34 @@ if __name__ == "__main__":
         return noise_operator(blur_operator(image))
 
     training_set = SynteticDataset(
-        ground_truth=BSDS500(path="data/BSDS500/train", transform=transforms.RandomCrop(size), device=device),
-        transform=measurement_operator
+        ground_truth=BSDS500(
+            path="data/BSDS500/train",
+            transform=transforms.RandomCrop(size),
+            device=device,
+        ),
+        transform=measurement_operator,
     )
     validation_set = SynteticDataset(
-        ground_truth=BSDS500(path="data/BSDS500/val", transform=transforms.RandomCrop(size), device=device),
-        transform=measurement_operator
+        ground_truth=BSDS500(
+            path="data/BSDS500/val",
+            transform=transforms.RandomCrop(size),
+            device=device,
+        ),
+        transform=measurement_operator,
     )
 
     functions = PNPD_functions(
-        P_inv = None, # Will be set in the model
-        prox_h_star = None, # Will be set in the model
+        P_inv=None,  # Will be set in the model
+        prox_h_star=None,  # Will be set in the model
         grad_f=None,  # Will be set in the model
         W=grad2D,
-        W_T=div2D
+        W_T=div2D,
     )
 
     parameters = PNPD_parameters(
         alpha=None,  # Will be set in the model
-        beta=None,   # Will be set in the model
-        k_max=1
+        beta=None,  # Will be set in the model
+        k_max=1,
     )
 
     model = PNPD_NN_step(
@@ -236,9 +265,15 @@ if __name__ == "__main__":
         lam_Net=Net(),
         params=parameters,
         funs=functions,
-        P_inv=lambda nu, x: P_inv(x=x, nu=nu, psfAbsSq=psf_rfft2_abs_sq),  # nu will be set in the model
-        prox_h_star=lambda lambda_regularization, v, lambda_prox: prox_h_star_TV(lambda_regularization, v), # lambda_regularization will be set in the model
-        grad_f=lambda u, observed_rfft: grad_least_squares_blur(u, observed_rfft, psf_rfft2, psf_rfft2_conj=psf_rfft2_conj) # observed_rfft will be set in the model
+        P_inv=lambda nu, x: P_inv(
+            x=x, nu=nu, psfAbsSq=psf_rfft2_abs_sq
+        ),  # nu will be set in the model
+        prox_h_star=lambda lambda_regularization, v, lambda_prox: prox_h_star_TV(
+            lambda_regularization, v
+        ),  # lambda_regularization will be set in the model
+        grad_f=lambda u, observed_rfft: grad_least_squares_blur(
+            u, observed_rfft, psf_rfft2, psf_rfft2_conj=psf_rfft2_conj
+        ),  # observed_rfft will be set in the model
     )
 
     save_folder = "results/"
@@ -253,27 +288,29 @@ if __name__ == "__main__":
     ssim_fun = SSIM(data_range=1.0, size_average=True, channel=1)
 
     config = TrainingConfig(
-        model = model,
+        model=model,
         training_set=training_set,
         validation_set=validation_set,
         batch_size=8,
         save_path=save_path,
         info_path=info_save_path,
         device=device,
-        optimizer = lambda param: torch.optim.Adam(param, lr=1e-5),
+        optimizer=lambda param: torch.optim.Adam(param, lr=1e-5),
         loss_fn=lambda X, Y: -ssim_fun(X, Y),  # Using SSIM as loss function
-        epochs=50
+        epochs=50,
     )
 
     results = training(config)
 
     import json
     from dataclasses import asdict
+
     with open(results_save_path, "w") as f:
         json.dump(asdict(results), f)
 
     import numpy as np
     from matplotlib import pyplot as plt
+
     execution_time = np.cumsum(results.execution_time)
 
     plots_folder = "/plots/"
@@ -299,7 +336,7 @@ if __name__ == "__main__":
     plt.savefig(save_folder + save_name + plots_folder + "loss_over_epochs.png")
 
     f, axs = plt.subplots(1, 3)
-    i=1
+    i = 1
     ax1, ax2, ax3 = axs
     observed, gt = validation_set[i]
 
@@ -345,21 +382,33 @@ if __name__ == "__main__":
     plt.ylabel("Step size")
     plt.title("Step sizes over iterations")
     plt.legend()
-    plt.savefig(save_folder + save_name + plots_folder + "step_sizes_over_iterations.png")
+    plt.savefig(
+        save_folder + save_name + plots_folder + "step_sizes_over_iterations.png"
+    )
 
     plt.figure()
     plt.plot(lam_list, label=r"$\lambda$")
     plt.xlabel("Iterations")
     plt.ylabel(r"$\lambda$")
     plt.title("Regularization parameter over iterations")
-    plt.savefig(save_folder + save_name + plots_folder + "regularization_parameter_over_iterations.png")
+    plt.savefig(
+        save_folder
+        + save_name
+        + plots_folder
+        + "regularization_parameter_over_iterations.png"
+    )
 
     plt.figure()
     plt.plot(nu_list, label=r"$\nu$")
     plt.xlabel("Iterations")
     plt.ylabel(r"$\nu$")
     plt.title("Preconditioner parameter over iterations")
-    plt.savefig(save_folder + save_name + plots_folder + "preconditioner_parameter_over_iterations.png")
+    plt.savefig(
+        save_folder
+        + save_name
+        + plots_folder
+        + "preconditioner_parameter_over_iterations.png"
+    )
 
     plt.figure()
     plt.plot(ssim_list, label="SSIM")

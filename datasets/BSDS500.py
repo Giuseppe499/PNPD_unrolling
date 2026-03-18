@@ -3,6 +3,7 @@ import torchvision
 import os
 from PIL import Image
 
+
 class BSDS500(torch.utils.data.Dataset):
     def __init__(self, path, transform=None, device="cpu"):
         self.path = path
@@ -10,7 +11,11 @@ class BSDS500(torch.utils.data.Dataset):
         self.device = device
 
         # Assuming all files in the directory are images
-        self.images_paths = [os.path.join(path, fname) for fname in os.listdir(path) if fname.endswith(('.png', '.jpg', '.jpeg'))]
+        self.images_paths = [
+            os.path.join(path, fname)
+            for fname in os.listdir(path)
+            if fname.endswith((".png", ".jpg", ".jpeg"))
+        ]
 
     def __len__(self):
         return len(self.images_paths)
@@ -28,15 +33,19 @@ class BSDS500(torch.utils.data.Dataset):
 
         return image
 
+
 if __name__ == "__main__":
-    dataset = BSDS500(path="data/BSDS500/train", transform=torchvision.transforms.RandomCrop((256, 256)))
+    dataset = BSDS500(
+        path="data/BSDS500/train",
+        transform=torchvision.transforms.RandomCrop((256, 256)),
+    )
 
     import matplotlib.pyplot as plt
 
     f, axs = plt.subplots(2, 2)
     for ax in axs.flatten():
         img = dataset[0]
-        ax.imshow(img.squeeze(), cmap='gray')
-        ax.axis('off')
+        ax.imshow(img.squeeze(), cmap="gray")
+        ax.axis("off")
 
     plt.show()

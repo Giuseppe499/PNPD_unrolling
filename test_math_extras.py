@@ -1,5 +1,12 @@
 import torch
-from math_extras import grad2D, div2D, least_squares_data_fidelity, total_variation, LS_TV_loss
+from math_extras import (
+    grad2D,
+    div2D,
+    least_squares_data_fidelity,
+    total_variation,
+    LS_TV_loss,
+)
+
 
 def test_grad2D_and_div2D_transpose():
     w = 3
@@ -24,37 +31,43 @@ def test_grad2D_and_div2D_transpose():
     assert A_T.shape == (2, w, h, w, h), "A_T has incorrect shape"
     assert torch.allclose(A, A_T_T), "A and A_T_T are not equal"
 
+
 def test_least_squares_data_fidelity_basic():
     x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
     b = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
     result = least_squares_data_fidelity(x, b)
     assert torch.allclose(result, torch.tensor(0.0))
 
+
 def test_least_squares_data_fidelity_nonzero():
     x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
     b = torch.tensor([[0.0, 0.0], [0.0, 0.0]])
     result = least_squares_data_fidelity(x, b)
-    expected = torch.sum(x ** 2) / 2.0
+    expected = torch.sum(x**2) / 2.0
     assert torch.allclose(result, expected)
+
 
 def test_total_variation_constant():
     x = torch.ones((1, 4, 4))
-    result = total_variation(x, eps=.0)
+    result = total_variation(x, eps=0.0)
     assert torch.allclose(result, torch.tensor(0.0))
+
 
 def test_total_variation_constant_with_eps():
     x = torch.ones((1, 4, 4))
     tol = 1e-2
     result = total_variation(x, eps=tol)
     print(result)
-    assert torch.allclose(result, torch.tensor(tol**.5 * x.numel()))
+    assert torch.allclose(result, torch.tensor(tol**0.5 * x.numel()))
+
 
 def test_total_variation_single_jump():
     x = torch.zeros((1, 4, 4))
     x[..., 2, 2] = 1.0
-    result = total_variation(x, eps=.0)
+    result = total_variation(x, eps=0.0)
     print(result)
     assert torch.allclose(result, 2 + torch.sqrt(torch.tensor(2.0)))
+
 
 def test_LS_TV_loss_sum():
     x = torch.ones((1, 4, 4))
@@ -64,4 +77,3 @@ def test_LS_TV_loss_sum():
     tv = total_variation(x)
     loss = LS_TV_loss(x, b, lambda_tv)
     assert torch.allclose(loss, fidelity + lambda_tv * tv)
-

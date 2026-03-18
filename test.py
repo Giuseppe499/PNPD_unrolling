@@ -7,7 +7,15 @@ if __name__ == "__main__":
     from datasets.BSDS500 import BSDS500
     from torchvision import transforms
     from torch.fft import rfft2
-    from math_extras import blur_image, gaussian_psf, grad2D, div2D, grad_least_squares_blur, P_inv, prox_h_star_TV
+    from math_extras import (
+        blur_image,
+        gaussian_psf,
+        grad2D,
+        div2D,
+        grad_least_squares_blur,
+        P_inv,
+        prox_h_star_TV,
+    )
     from solvers import PNPD_functions, PNPD_parameters
     from pytorch_msssim import SSIM
     from train import TrainingResult
@@ -15,7 +23,7 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    size=(256, 256)
+    size = (256, 256)
 
     psf_rfft2 = rfft2(gaussian_psf(sigma=2, size=size)).to(device)
     psf_rfft2_conj = psf_rfft2.conj().to(device)
@@ -24,7 +32,8 @@ if __name__ == "__main__":
     def blur_operator(image):
         return blur_image(image, psf_rfft2)
 
-    noise_percent= 0.001  # 1% noise
+    noise_percent = 0.001  # 1% noise
+
     def noise_operator(image):
         noise = torch.randn_like(image)
         noise /= noise.norm()
@@ -35,22 +44,26 @@ if __name__ == "__main__":
         return noise_operator(blur_operator(image))
 
     test_set = SynteticDataset(
-        ground_truth=BSDS500(path="data/BSDS500/test", transform=transforms.RandomCrop(size), device=device),
-        transform=measurement_operator
+        ground_truth=BSDS500(
+            path="data/BSDS500/test",
+            transform=transforms.RandomCrop(size),
+            device=device,
+        ),
+        transform=measurement_operator,
     )
 
     functions = PNPD_functions(
-        P_inv = None, # Will be set in the model
-        prox_h_star = None, # Will be set in the model
+        P_inv=None,  # Will be set in the model
+        prox_h_star=None,  # Will be set in the model
         grad_f=None,  # Will be set in the model
         W=grad2D,
-        W_T=div2D
+        W_T=div2D,
     )
 
     parameters = PNPD_parameters(
         alpha=None,  # Will be set in the model
-        beta=None,   # Will be set in the model
-        k_max=1
+        beta=None,  # Will be set in the model
+        k_max=1,
     )
 
     model = PNPD_NN_step(
@@ -60,9 +73,15 @@ if __name__ == "__main__":
         lam_Net=Net(),
         params=parameters,
         funs=functions,
-        P_inv=lambda nu, x: P_inv(x=x, nu=nu, psfAbsSq=psf_rfft2_abs_sq),  # nu will be set in the model
-        prox_h_star=lambda lambda_regularization, v, lambda_prox: prox_h_star_TV(lambda_regularization, v), # lambda_regularization will be set in the model
-        grad_f=lambda u, observed_rfft: grad_least_squares_blur(u, observed_rfft, psf_rfft2, psf_rfft2_conj=psf_rfft2_conj) # observed_rfft will be set in the model
+        P_inv=lambda nu, x: P_inv(
+            x=x, nu=nu, psfAbsSq=psf_rfft2_abs_sq
+        ),  # nu will be set in the model
+        prox_h_star=lambda lambda_regularization, v, lambda_prox: prox_h_star_TV(
+            lambda_regularization, v
+        ),  # lambda_regularization will be set in the model
+        grad_f=lambda u, observed_rfft: grad_least_squares_blur(
+            u, observed_rfft, psf_rfft2, psf_rfft2_conj=psf_rfft2_conj
+        ),  # observed_rfft will be set in the model
     )
 
     save_folder = "results/"
@@ -79,7 +98,6 @@ if __name__ == "__main__":
 
     ssim_fun = SSIM(data_range=1.0, size_average=True, channel=1)
 
-
     import json
 
     with open(results_save_path, "r") as f:
@@ -88,6 +106,7 @@ if __name__ == "__main__":
 
     import numpy as np
     from matplotlib import pyplot as plt
+
     execution_time = np.cumsum(results.execution_time)
 
     plots_folder = "/plots/"
@@ -117,7 +136,7 @@ if __name__ == "__main__":
     plt.savefig(save_folder + save_name + plots_folder + "loss_over_epochs.png")
 
     f, axs = plt.subplots(1, 3)
-    i=0
+    i = 0
     ax1, ax2, ax3 = axs
     observed, gt = test_set[i]
     observed_device = observed.unsqueeze(0).to(device)
@@ -164,21 +183,33 @@ if __name__ == "__main__":
     plt.ylabel("Step size")
     plt.title("Step sizes over iterations")
     plt.legend()
-    plt.savefig(save_folder + save_name + plots_folder + "step_sizes_over_iterations.png")
+    plt.savefig(
+        save_folder + save_name + plots_folder + "step_sizes_over_iterations.png"
+    )
 
     plt.figure()
     plt.plot(lam_list, label=r"$\lambda$")
     plt.xlabel("Iterations")
     plt.ylabel(r"$\lambda$")
     plt.title("Regularization parameter over iterations")
-    plt.savefig(save_folder + save_name + plots_folder + "regularization_parameter_over_iterations.png")
+    plt.savefig(
+        save_folder
+        + save_name
+        + plots_folder
+        + "regularization_parameter_over_iterations.png"
+    )
 
     plt.figure()
     plt.plot(nu_list, label=r"$\nu$")
     plt.xlabel("Iterations")
     plt.ylabel(r"$\nu$")
     plt.title("Preconditioner parameter over iterations")
-    plt.savefig(save_folder + save_name + plots_folder + "preconditioner_parameter_over_iterations.png")
+    plt.savefig(
+        save_folder
+        + save_name
+        + plots_folder
+        + "preconditioner_parameter_over_iterations.png"
+    )
 
     plt.figure()
     plt.plot(ssim_list, label="SSIM")
