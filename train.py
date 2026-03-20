@@ -111,10 +111,10 @@ def training(config: TrainingConfig):
             coeff_sum = 0.0
 
             # Make predictions for this batch
-            for i in range(config.unrolling_steps):
+            for j in range(config.unrolling_steps):
                 u, v = model(observed, u, v)
                 # coeff = 1.
-                coeff = 1.0 / (config.unrolling_steps - i)
+                coeff = 1.0 / (config.unrolling_steps - j)
                 coeff_sum += coeff
                 loss += loss_fn(u, ground_truth) * coeff
             loss = loss / coeff_sum
