@@ -238,7 +238,7 @@ if __name__ == "__main__":
     validation_set = SynteticDataset(
         ground_truth=BSDS500(
             path="data/BSDS500/val",
-            transform=transforms.RandomCrop(size),
+            transform=transforms.CenterCrop(size),
             device=device,
         ),
         transform=measurement_operator,
