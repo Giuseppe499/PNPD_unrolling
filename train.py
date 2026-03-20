@@ -295,7 +295,7 @@ if __name__ == "__main__":
         save_path=save_path,
         info_path=info_save_path,
         device=device,
-        optimizer=lambda param: torch.optim.Adam(param, lr=1e-5),
+        optimizer=lambda param: torch.optim.Adam(param, lr=1e-4),
         loss_fn=lambda X, Y: -ssim_fun(X, Y),  # Using SSIM as loss function
         epochs=50,
     )
