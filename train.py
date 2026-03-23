@@ -323,7 +323,7 @@ if __name__ == "__main__":
     plt.ylabel("Loss")
     plt.title("Loss over time")
     plt.legend()
-    plt.savefig(save_folder + save_name + plots_folder + "loss_over_time.png")
+    plt.savefig(save_folder + save_name + plots_folder + "loss_over_time.pdf")
 
     plt.figure()
     epochs = range(len(results.loss_history))
@@ -333,7 +333,7 @@ if __name__ == "__main__":
     plt.ylabel("Loss")
     plt.title("Loss over epochs")
     plt.legend()
-    plt.savefig(save_folder + save_name + plots_folder + "loss_over_epochs.png")
+    plt.savefig(save_folder + save_name + plots_folder + "loss_over_epochs.pdf")
 
     f, axs = plt.subplots(1, 3)
     i = 1
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         ax3.axis("off")
         ax3.set_title("Reconstructed")
 
-    plt.savefig(save_folder + save_name + plots_folder + "reconstruction_example.png")
+    plt.savefig(save_folder + save_name + plots_folder + "reconstruction_example.pdf")
 
     plt.figure()
     plt.plot(alpha_list, label=r"$\alpha$")
@@ -383,7 +383,7 @@ if __name__ == "__main__":
     plt.title("Step sizes over iterations")
     plt.legend()
     plt.savefig(
-        save_folder + save_name + plots_folder + "step_sizes_over_iterations.png"
+        save_folder + save_name + plots_folder + "step_sizes_over_iterations.pdf"
     )
 
     plt.figure()
@@ -395,7 +395,7 @@ if __name__ == "__main__":
         save_folder
         + save_name
         + plots_folder
-        + "regularization_parameter_over_iterations.png"
+        + "regularization_parameter_over_iterations.pdf"
     )
 
     plt.figure()
@@ -407,7 +407,7 @@ if __name__ == "__main__":
         save_folder
         + save_name
         + plots_folder
-        + "preconditioner_parameter_over_iterations.png"
+        + "preconditioner_parameter_over_iterations.pdf"
     )
 
     plt.figure()
@@ -415,6 +415,6 @@ if __name__ == "__main__":
     plt.xlabel("Iterations")
     plt.ylabel("SSIM")
     plt.title("SSIM over iterations")
-    plt.savefig(save_folder + save_name + plots_folder + "ssim_over_iterations.png")
+    plt.savefig(save_folder + save_name + plots_folder + "ssim_over_iterations.pdf")
 
     plt.show()

@@ -19,6 +19,7 @@ if __name__ == "__main__":
     from solvers import PNPD_functions, PNPD_parameters
     from pytorch_msssim import SSIM
     from train import TrainingResult
+    from plot_utilities import set_font_size
 
     torch.manual_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     test_set = SynteticDataset(
         ground_truth=BSDS500(
             path="data/BSDS500/test",
-            transform=transforms.RandomCrop(size),
+            transform=transforms.CenterCrop(size),
             device=device,
         ),
         transform=measurement_operator,
@@ -116,14 +117,15 @@ if __name__ == "__main__":
     results.loss_history = -np.array(results.loss_history)
     results.val_loss_history = -np.array(results.val_loss_history)
 
+    set_font_size(18)
     plt.figure()
     plt.semilogy(execution_time, results.loss_history, label="Training loss")
     plt.semilogy(execution_time, results.val_loss_history, label="Validation loss")
     plt.xlabel("Execution time (s)")
     plt.ylabel("Loss")
-    plt.title("Loss over time")
     plt.legend()
-    plt.savefig(save_folder + save_name + plots_folder + "loss_over_time.png")
+    plt.tight_layout()
+    plt.savefig(save_folder + save_name + plots_folder + "loss_over_time.pdf")
 
     plt.figure()
     epochs = range(len(results.loss_history))
@@ -131,91 +133,109 @@ if __name__ == "__main__":
     plt.semilogy(epochs, results.val_loss_history, label="Validation loss")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
-    plt.title("Loss over epochs")
     plt.legend()
-    plt.savefig(save_folder + save_name + plots_folder + "loss_over_epochs.png")
+    plt.tight_layout()
+    plt.savefig(save_folder + save_name + plots_folder + "loss_over_epochs.pdf")
 
-    f, axs = plt.subplots(1, 3)
-    i = 0
-    ax1, ax2, ax3 = axs
-    observed, gt = test_set[i]
-    observed_device = observed.unsqueeze(0).to(device)
-    gt_device = gt.unsqueeze(0).to(device)
+    i_list = [0, 3, 6, 8]
+    for i in i_list:
+        observed, gt = test_set[i]
+        observed_device = observed.unsqueeze(0).to(device)
+        gt_device = gt.unsqueeze(0).to(device)
 
-    ax1.imshow(gt.cpu().squeeze(), cmap="gray")
-    ax1.axis("off")
-    ax1.set_title("Ground Truth")
+        square_fig_size = 6
+        square_fig_size = (square_fig_size, square_fig_size)
 
-    ax2.imshow(observed.cpu().squeeze(), cmap="gray")
-    ax2.axis("off")
-    ax2.set_title(f"Observed, SSIM: {ssim_fun(observed_device, gt_device).item():.4f}")
+        set_font_size(22)
+        plt.figure(figsize=square_fig_size)
+        plt.imshow(gt.cpu().squeeze(), cmap="gray")
+        plt.axis("off")
+        plt.title(" ")
+        plt.tight_layout()
+        plt.savefig(save_folder + save_name + plots_folder + f"ground_truth_{i}.pdf")
 
-    alpha_list = []
-    beta_list = []
-    lam_list = []
-    nu_list = []
-    ssim_list = []
+        plt.figure(figsize=square_fig_size)
+        plt.imshow(observed.cpu().squeeze(), cmap="gray")
+        plt.title(f"SSIM: {ssim_fun(observed_device, gt_device).item():.4f}")
+        plt.axis("off")
+        plt.tight_layout()
+        plt.savefig(save_folder + save_name + plots_folder + f"observed_{i}.pdf")
 
-    with torch.no_grad():
-        u = observed_device.clone()
-        v = torch.zeros((2, *u.shape), device=device)
-        ssim_list.append(ssim_fun(u, gt_device).item())
+        alpha_list = []
+        beta_list = []
+        lam_list = []
+        nu_list = []
+        ssim_list = []
 
-        model.eval()
-        for _ in range(100):
-            u, v = model(observed_device, u, v)
-            alpha_list.append(model.last_alpha.item())
-            beta_list.append(model.last_beta.item())
-            lam_list.append(model.last_lam.item())
-            nu_list.append(model.last_nu.item())
+        with torch.no_grad():
+            u = observed_device.clone()
+            v = torch.zeros((2, *u.shape), device=device)
             ssim_list.append(ssim_fun(u, gt_device).item())
 
-        ax3.imshow(u.cpu().squeeze(), cmap="gray")
-        ax3.axis("off")
-        ax3.set_title(f"Reconstructed, SSIM: {ssim_fun(u, gt_device).item():.4f}")
+            model.eval()
+            for _ in range(100):
+                u, v = model(observed_device, u, v)
+                alpha_list.append(model.last_alpha.item())
+                beta_list.append(model.last_beta.item())
+                lam_list.append(model.last_lam.item())
+                nu_list.append(model.last_nu.item())
+                ssim_list.append(ssim_fun(u, gt_device).item())
 
-    plt.savefig(save_folder + save_name + plots_folder + "reconstruction_example.png")
+            plt.figure(figsize=square_fig_size)
+            plt.imshow(u.cpu().squeeze(), cmap="gray")
+            plt.axis("off")
+            plt.title(f"SSIM: {ssim_fun(u, gt_device).item():.4f}")
+            plt.tight_layout()
+            plt.savefig(
+                save_folder + save_name + plots_folder + f"reconstruction_{i}.pdf"
+            )
 
-    plt.figure()
-    plt.plot(alpha_list, label=r"$\alpha$")
-    plt.plot(beta_list, label=r"$\beta$")
-    plt.xlabel("Iterations")
-    plt.ylabel("Step size")
-    plt.title("Step sizes over iterations")
-    plt.legend()
-    plt.savefig(
-        save_folder + save_name + plots_folder + "step_sizes_over_iterations.png"
-    )
+        set_font_size(28)
+        plt.figure()
+        plt.plot(alpha_list, label=r"$\alpha$")
+        plt.plot(beta_list, label=r"$\beta$")
+        # plt.xlabel("Iterations")
+        # plt.ylabel("Step size")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(
+            save_folder
+            + save_name
+            + plots_folder
+            + f"step_sizes_over_iterations_{i}.pdf"
+        )
 
-    plt.figure()
-    plt.plot(lam_list, label=r"$\lambda$")
-    plt.xlabel("Iterations")
-    plt.ylabel(r"$\lambda$")
-    plt.title("Regularization parameter over iterations")
-    plt.savefig(
-        save_folder
-        + save_name
-        + plots_folder
-        + "regularization_parameter_over_iterations.png"
-    )
+        plt.figure()
+        plt.plot(lam_list, label=r"$\lambda$")
+        # plt.xlabel("Iterations")
+        # plt.ylabel(r"$\lambda$")
+        plt.tight_layout()
+        plt.savefig(
+            save_folder
+            + save_name
+            + plots_folder
+            + f"regularization_parameter_over_iterations_{i}.pdf"
+        )
 
-    plt.figure()
-    plt.plot(nu_list, label=r"$\nu$")
-    plt.xlabel("Iterations")
-    plt.ylabel(r"$\nu$")
-    plt.title("Preconditioner parameter over iterations")
-    plt.savefig(
-        save_folder
-        + save_name
-        + plots_folder
-        + "preconditioner_parameter_over_iterations.png"
-    )
+        plt.figure()
+        plt.plot(nu_list, label=r"$\nu$")
+        # plt.xlabel("Iterations")
+        # plt.ylabel(r"$\nu$")
+        plt.tight_layout()
+        plt.savefig(
+            save_folder
+            + save_name
+            + plots_folder
+            + f"preconditioner_parameter_over_iterations_{i}.pdf"
+        )
 
-    plt.figure()
-    plt.plot(ssim_list, label="SSIM")
-    plt.xlabel("Iterations")
-    plt.ylabel("SSIM")
-    plt.title("SSIM over iterations")
-    plt.savefig(save_folder + save_name + plots_folder + "ssim_over_iterations.png")
+        plt.figure()
+        plt.plot(ssim_list, label="SSIM")
+        # plt.xlabel("Iterations")
+        # plt.ylabel("SSIM")
+        plt.tight_layout()
+        plt.savefig(
+            save_folder + save_name + plots_folder + f"ssim_over_iterations_{i}.pdf"
+        )
 
     plt.show()
