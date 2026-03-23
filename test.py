@@ -32,7 +32,7 @@ if __name__ == "__main__":
     def blur_operator(image):
         return blur_image(image, psf_rfft2)
 
-    noise_percent = 0.001  # 1% noise
+    noise_percent = 0.01  # 1% noise
 
     def noise_operator(image):
         noise = torch.randn_like(image)
