@@ -49,8 +49,8 @@ class PNPD_NN_step(nn.Module):
         self.params.alpha = self.params.alpha[
             :, None, None
         ]  # Add dimensions to match PNPD_step input
-        self.params.beta = self.beta_Net(net_input) + 0.5 / 8
 
+        self.params.beta = self.beta_Net(net_input) + 0.5 / 8
         # self.params.beta = torch.ones(u.shape[0], 1).to(u.device) / 8. * .98  # Use a constant value for beta
         self.last_beta = self.params.beta
         self.params.beta = self.params.beta[:, None, None]
