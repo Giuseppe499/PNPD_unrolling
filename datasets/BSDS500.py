@@ -10,12 +10,12 @@ class BSDS500(torch.utils.data.Dataset):
         self.transform = transform
         self.device = device
 
-        # Assuming all files in the directory are images
         self.images_paths = [
             os.path.join(path, fname)
             for fname in os.listdir(path)
             if fname.endswith((".png", ".jpg", ".jpeg"))
         ]
+        self.images_paths.sort()  # Sort the paths to ensure consistent ordering
 
     def __len__(self):
         return len(self.images_paths)
