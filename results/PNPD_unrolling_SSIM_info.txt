@@ -1,0 +1,1 @@
+epoch 21 elapsed time: 3:28 train loss: -0.7817790389060975 validation loss: -0.7560151815414429
