@@ -20,6 +20,7 @@ if __name__ == "__main__":
     from pytorch_msssim import SSIM
     from train import TrainingResult
     from plot_utilities import set_font_size
+    from PIL import Image
 
     torch.manual_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -148,18 +149,20 @@ if __name__ == "__main__":
 
         set_font_size(22)
         plt.figure(figsize=square_fig_size)
-        plt.imshow(gt.cpu().squeeze(), cmap="gray")
+        img = Image.fromarray(gt.cpu().squeeze().numpy() * 255).convert("L")
+        plt.imshow(img, cmap="gray")
         plt.axis("off")
         plt.title(" ")
         plt.tight_layout()
-        plt.savefig(save_folder + save_name + plots_folder + f"ground_truth_{i}.pdf")
+        img.save(save_folder + save_name + plots_folder + f"ground_truth_{i}.png")
 
         plt.figure(figsize=square_fig_size)
-        plt.imshow(observed.cpu().squeeze(), cmap="gray")
+        img = Image.fromarray(observed.cpu().squeeze().numpy() * 255).convert("L")
+        plt.imshow(img, cmap="gray")
         plt.title(f"SSIM: {ssim_fun(observed_device, gt_device).item():.4f}")
         plt.axis("off")
         plt.tight_layout()
-        plt.savefig(save_folder + save_name + plots_folder + f"observed_{i}.pdf")
+        img.save(save_folder + save_name + plots_folder + f"observed_{i}.png")
 
         alpha_list = []
         beta_list = []
@@ -182,13 +185,12 @@ if __name__ == "__main__":
                 ssim_list.append(ssim_fun(u, gt_device).item())
 
             plt.figure(figsize=square_fig_size)
-            plt.imshow(u.cpu().squeeze(), cmap="gray")
+            img = Image.fromarray(u.cpu().squeeze().numpy() * 255).convert("L")
+            plt.imshow(img, cmap="gray")
             plt.axis("off")
             plt.title(f"SSIM: {ssim_fun(u, gt_device).item():.4f}")
             plt.tight_layout()
-            plt.savefig(
-                save_folder + save_name + plots_folder + f"reconstruction_{i}.pdf"
-            )
+            img.save(save_folder + save_name + plots_folder + f"reconstruction_{i}.png")
 
         set_font_size(28)
         plt.figure()
